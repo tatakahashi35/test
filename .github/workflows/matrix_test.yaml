@@ -1,0 +1,25 @@
+
+name: matrix-test
+on: workflow_dispatch
+
+jobs:
+  init:
+    runs-on: ubuntu-latest
+    outputs:
+      changed_projects: ${{ steps.set.outputs.changed_projects }}
+    steps:
+      - id: set
+        run: |
+          json_output='{ "changed_projects": [{"changed_projects":"python/projects/foo","changed_projects_artifact":"python_projects_foo"},{"changed_projects":"python/projects/bar-baz","changed_projects_artifact":"python_projects_bar_baz"}] }'
+          echo "changed_projects=$json_output" | tee -a "$GITHUB_OUTPUT"
+
+  python-projects:
+    needs: [init]
+    strategy:
+      matrix: ${{ fromJson(needs.init.outputs.changed_projects) }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "matrix.changed_projects=[${{ matrix.changed_projects }}]"
+      - run: echo "matrix.changed_projects_artifact=[${{ matrix.changed_projects_artifact }}]"
+      - run: echo "nested_path=[${{ matrix.changed_projects.changed_projects }}]"
+      - run: echo "nested_artifact=[${{ matrix.changed_projects.changed_projects_artifact }}]"
